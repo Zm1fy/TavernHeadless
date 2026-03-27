@@ -98,7 +98,6 @@ const emit = defineEmits<{
             <span class="truncate">{{ props.currentPresetName || props.t("nav.currentPresetEmpty") }}</span>
           </div>
           <div class="font-mono text-[10px] text-zinc-600">{{ props.t("nav.currentPresetHint") }}</div>
-          <div class="font-mono text-[10px] text-amber-300/80">{{ props.t("nav.presetCreateTip") }}</div>
           <div class="grid grid-cols-3 gap-1.5">
             <button
               class="btn-ghost justify-center px-2 py-1 text-[11px] disabled:cursor-not-allowed disabled:opacity-40"

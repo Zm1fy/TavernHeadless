@@ -193,6 +193,7 @@ export type SendMessageResult = {
   localFallback: boolean;
   ok: boolean;
   streamFallback: boolean;
+  streamFallbackReason?: string;
   result?: WorkspaceRespondResult;
   tokens: number;
   reason?: "empty" | "failed" | "guarded" | "no_session";

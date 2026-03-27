@@ -167,7 +167,7 @@ const updateRegexProfileSchema = z.object({
 });
 
 
-const MAX_CHARACTER_IMPORT_BYTES = 200_000;
+const MAX_CHARACTER_IMPORT_BYTES = 200_000_000;
 
 const resourceListItemExample = {
   id: "preset_story",

@@ -1,4 +1,4 @@
-import { apiClient } from "../api";
+import { apiBaseUrl, apiClient } from "../api";
 import { toWorkspaceSession } from "./mappers";
 import type { WorkspaceSession } from "./types";
 
@@ -6,7 +6,7 @@ export async function fetchHealthStatus(): Promise<string> {
   const response = await apiClient.health.get();
   const service = response.service ?? "api";
   const database = response.database ?? "unknown-db";
-  return `${service} (${database})`;
+  return `${service} (${database}) @ ${apiBaseUrl}`;
 }
 
 export async function fetchSessions(accountId?: string): Promise<WorkspaceSession[]> {

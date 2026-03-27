@@ -386,6 +386,7 @@ export function createMessageActions(context: MessageActionsContext) {
     const draftMessages = [userMessage, assistantMessage];
 
     const startAt = Date.now();
+    let streamFallbackReason: string | undefined;
 
     try {
       const result = await streamSessionResponse(session.id, text, {
@@ -415,8 +416,8 @@ export function createMessageActions(context: MessageActionsContext) {
         streamFallback: false,
         tokens: assistantMessage.tokens
       };
-    } catch {
-      // continue with respond fallback
+    } catch (error) {
+      streamFallbackReason = resolveErrorMessage(error);
     }
 
     try {
@@ -436,6 +437,7 @@ export function createMessageActions(context: MessageActionsContext) {
         ok: true,
         result,
         streamFallback: true,
+        streamFallbackReason,
         tokens: assistantMessage.tokens
       };
     } catch {
@@ -451,6 +453,7 @@ export function createMessageActions(context: MessageActionsContext) {
         timelineSyncFailed: false,
         ok: true,
         streamFallback: true,
+        streamFallbackReason,
         tokens: assistantMessage.tokens ?? 0
       };
     } catch {
@@ -463,6 +466,7 @@ export function createMessageActions(context: MessageActionsContext) {
         ok: false,
         reason: "failed",
         streamFallback: true,
+        streamFallbackReason,
         tokens: assistantMessage.tokens ?? 0
       };
     }
@@ -475,4 +479,20 @@ export function createMessageActions(context: MessageActionsContext) {
     sendMessage,
     updateTimelineMessage
   };
+}
+
+function resolveErrorMessage(error: unknown): string | undefined {
+  if (!error) {
+    return undefined;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || undefined;
+  }
+
+  return undefined;
 }

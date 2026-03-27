@@ -153,7 +153,13 @@ export function useWorkspaceRuntimeActions(options: UseWorkspaceRuntimeActionsOp
     const result = await options.workspace.sendMessage(text);
 
     if (result.streamFallback) {
-      options.addEvent("events.streamFallback", "warn");
+      if (result.streamFallbackReason) {
+        options.addEvent("events.streamFallbackWithReason", "warn", {
+          reason: result.streamFallbackReason
+        });
+      } else {
+        options.addEvent("events.streamFallback", "warn");
+      }
     }
 
     if (result.localFallback) {
