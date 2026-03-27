@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import type { STWorldBook, STWorldBookEntry } from '../types/worldbook.js';
-import { WI_LOGIC, WI_POSITION, WI_ROLE } from '../types/worldbook.js';
+import { WI_LOGIC, WI_POSITION, WI_POSITION_FROM_STRING, WI_ROLE } from '../types/worldbook.js';
 
 // ── Raw Zod schemas ───────────────────────────────────
 
 const rawEntrySchema = z.object({
   uid: z.number().optional(),
   key: z.array(z.string()).default([]),
+  keys: z.array(z.string()).optional(),
   keysecondary: z.array(z.string()).default([]),
   secondary_keys: z.array(z.string()).optional(), // v2 spec 用 secondary_keys
   selective: z.boolean().default(true),
@@ -14,7 +15,7 @@ const rawEntrySchema = z.object({
   constant: z.boolean().default(false),
   content: z.string().default(''),
   comment: z.string().default(''),
-  position: z.number().default(WI_POSITION.BEFORE),
+  position: z.preprocess((value) => parsePositionValue(value), z.number()).default(WI_POSITION.BEFORE),
   order: z.number().default(100),
   insertion_order: z.number().optional(), // v2 spec 别名
   depth: z.number().default(4),
@@ -26,7 +27,7 @@ const rawEntrySchema = z.object({
   matchWholeWords: z.boolean().nullable().default(null),
   // Extensions 嵌套（v2 spec 把一些字段放在 extensions 里）
   extensions: z.object({
-    position: z.number().optional(),
+    position: z.preprocess((value) => parsePositionValue(value), z.number()).optional(),
     scan_depth: z.number().nullable().optional(),
     case_sensitive: z.boolean().nullable().optional(),
     match_whole_words: z.boolean().nullable().optional(),
@@ -55,7 +56,7 @@ function normalizeEntry(raw: z.infer<typeof rawEntrySchema>, index: number): STW
 
   return {
     uid: raw.uid ?? index,
-    key: raw.key,
+    key: raw.key.length > 0 ? raw.key : (raw.keys ?? []),
     keysecondary: raw.keysecondary.length > 0 ? raw.keysecondary : (raw.secondary_keys ?? []),
     selective: raw.selective,
     selectiveLogic: (ext?.selectiveLogic ?? raw.selectiveLogic) as STWorldBookEntry['selectiveLogic'],
@@ -83,7 +84,7 @@ function normalizeEntry(raw: z.infer<typeof rawEntrySchema>, index: number): STW
  * @throws {z.ZodError} JSON 结构不符合预期时
  */
 export function parseWorldBook(json: unknown, name?: string): STWorldBook {
-  const raw = rawWorldBookSchema.parse(json);
+  const raw = rawWorldBookSchema.parse(resolveWorldbookPayload(json));
 
   // 统一 entries 为数组
   let rawEntries: z.infer<typeof rawEntrySchema>[];
@@ -104,4 +105,37 @@ export function parseWorldBook(json: unknown, name?: string): STWorldBook {
     recursive: false,
     maxRecursionSteps: 0,
   };
+}
+
+function resolveWorldbookPayload(json: unknown): unknown {
+  const root = asRecord(json);
+  if (!root) {
+    return json;
+  }
+
+  const rootData = asRecord(root.data);
+  const candidates = [
+    root,
+    asRecord(root.worldbook),
+    asRecord(root.character_book),
+    rootData,
+    rootData ? asRecord(rootData.worldbook) : null,
+    rootData ? asRecord(rootData.character_book) : null,
+  ].filter((candidate): candidate is Record<string, unknown> => candidate !== null);
+
+  const withEntries = candidates.find((candidate) => Object.hasOwn(candidate, "entries"));
+  return withEntries ?? json;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function parsePositionValue(value: unknown): unknown {
+  if (typeof value === "string") {
+    return WI_POSITION_FROM_STRING[value.trim().toLowerCase()] ?? value;
+  }
+  return value;
 }

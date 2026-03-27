@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseWorldBook } from '../parsers/worldbook-parser.js';
+import { WI_POSITION } from '../types/worldbook.js';
 
 describe('parseWorldBook', () => {
   it('parses object-style entries', () => {
@@ -50,9 +51,48 @@ describe('parseWorldBook', () => {
 
     const wb = parseWorldBook(json);
     expect(wb.entries).toHaveLength(1);
+    expect(wb.entries[0]!.key).toEqual(['dragon']);
     expect(wb.entries[0]!.keysecondary).toEqual(['fire']);
     expect(wb.entries[0]!.order).toBe(50);
     expect(wb.entries[0]!.disable).toBe(false);
+  });
+
+  it('parses nested character_book payload', () => {
+    const json = {
+      character_book: {
+        entries: [
+          {
+            keys: ['city'],
+            content: 'The city has seven gates.',
+          },
+        ],
+      },
+    };
+
+    const wb = parseWorldBook(json);
+    expect(wb.entries).toHaveLength(1);
+    expect(wb.entries[0]!.key).toEqual(['city']);
+    expect(wb.entries[0]!.content).toBe('The city has seven gates.');
+  });
+
+  it('parses nested data.character_book payload', () => {
+    const json = {
+      data: {
+        character_book: {
+          entries: [
+            {
+              key: ['archive'],
+              content: 'The archive opens at dawn.',
+            },
+          ],
+        },
+      },
+    };
+
+    const wb = parseWorldBook(json);
+    expect(wb.entries).toHaveLength(1);
+    expect(wb.entries[0]!.key).toEqual(['archive']);
+    expect(wb.entries[0]!.content).toBe('The archive opens at dawn.');
   });
 
   it('handles v2 extensions fields', () => {
@@ -83,6 +123,37 @@ describe('parseWorldBook', () => {
     expect(entry.scanDepth).toBe(5);
     expect(entry.caseSensitive).toBe(true);
     expect(entry.matchWholeWords).toBe(true);
+  });
+
+  it('maps string position to numeric enum', () => {
+    const json = {
+      entries: [
+        { key: ['a'], content: 'a', position: 'after_char' },
+        { key: ['b'], content: 'b', position: 'before_an' },
+      ],
+    };
+
+    const wb = parseWorldBook(json);
+    expect(wb.entries[0]!.position).toBe(WI_POSITION.AFTER);
+    expect(wb.entries[1]!.position).toBe(WI_POSITION.AN_TOP);
+  });
+
+  it('maps extensions string position with higher priority', () => {
+    const json = {
+      entries: [
+        {
+          key: ['a'],
+          content: 'a',
+          position: 'before_char',
+          extensions: {
+            position: 'at_depth',
+          },
+        },
+      ],
+    };
+
+    const wb = parseWorldBook(json);
+    expect(wb.entries[0]!.position).toBe(WI_POSITION.AT_DEPTH);
   });
 
   it('maps v2 enabled to disable', () => {

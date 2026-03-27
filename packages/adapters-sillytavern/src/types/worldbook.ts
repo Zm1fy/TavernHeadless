@@ -24,6 +24,32 @@ export const WI_POSITION = {
 
 export type WIPosition = (typeof WI_POSITION)[keyof typeof WI_POSITION];
 
+export const WI_POSITION_LABEL = {
+  [WI_POSITION.BEFORE]: "before_char",
+  [WI_POSITION.AFTER]: "after_char",
+  [WI_POSITION.AN_TOP]: "before_an",
+  [WI_POSITION.AN_BOTTOM]: "after_an",
+  [WI_POSITION.AT_DEPTH]: "at_depth",
+  [WI_POSITION.EM_TOP]: "before_example",
+  [WI_POSITION.EM_BOTTOM]: "after_example",
+} as const;
+
+export const WI_POSITION_FROM_STRING: Readonly<Record<string, WIPosition>> = {
+  before_char: WI_POSITION.BEFORE,
+  after_char: WI_POSITION.AFTER,
+  before_an: WI_POSITION.AN_TOP,
+  after_an: WI_POSITION.AN_BOTTOM,
+  at_depth: WI_POSITION.AT_DEPTH,
+  before_example: WI_POSITION.EM_TOP,
+  after_example: WI_POSITION.EM_BOTTOM,
+  before: WI_POSITION.BEFORE,
+  after: WI_POSITION.AFTER,
+  author_note_top: WI_POSITION.AN_TOP,
+  author_note_bottom: WI_POSITION.AN_BOTTOM,
+  example_top: WI_POSITION.EM_TOP,
+  example_bottom: WI_POSITION.EM_BOTTOM,
+};
+
 /** 世界书条目 selective 逻辑 */
 export const WI_LOGIC = {
   /** 主关键词命中 + 至少一个辅助关键词命中 */
